@@ -129,6 +129,13 @@ app.get('/api/health', (req, res) => {
 });
 
 /**
+ * Root endpoint to prevent 404 on base URL
+ */
+app.get('/', (req, res) => {
+  res.send('AI Volunteer Dispatcher Backend is successfully deployed and running!');
+});
+
+/**
  * Matches volunteers to a specific task using Gemini AI
  * Expects { taskId, taskDescription, volunteers: [{id, name, skills, availability}] }
  */
