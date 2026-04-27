@@ -20,16 +20,24 @@ app.use(express.json());
 let db = null;
 try {
   const accountPathEnv = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
+  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+  
   const serviceAccountPath = accountPathEnv && accountPathEnv.startsWith('/') 
     ? path.join(__dirname, accountPathEnv)
     : path.resolve(__dirname, accountPathEnv || 'serviceAccountKey.json');
     
-  if (fs.existsSync(serviceAccountPath)) {
+  if (serviceAccountJson) {
+    const serviceAccount = JSON.parse(serviceAccountJson);
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount)
+    });
+    console.log("Firebase Admin Initialized from JSON environment variable.");
+  } else if (fs.existsSync(serviceAccountPath)) {
     const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount)
     });
-    console.log("Firebase Admin Initialized successfully.");
+    console.log("Firebase Admin Initialized successfully from file.");
   } else {
     // We will still initialize it with default config if application default credentials exist
     admin.initializeApp();
