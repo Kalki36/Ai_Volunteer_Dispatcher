@@ -206,17 +206,47 @@ Output format exactly in JSON:
       console.warn("All AI models failed (likely quota or availability). Using local fallback logic.", finalApiError.message);
       
       // Create a mocked fallback response
-      const sortedVolunteers = [...volunteers].sort(() => 0.5 - Math.random());
-      const selectedVolunteers = sortedVolunteers.slice(0, Math.min(3, volunteers.length));
+      // Calculate a basic score based on text matching between taskDescription and volunteer skills
+      const taskDescLower = (taskDescription || "").toLowerCase();
+      
+      const scoredVolunteers = volunteers.map(v => {
+        let matchScore = 50; // Base score for availability
+        const skills = Array.isArray(v.skills) ? v.skills : (typeof v.skills === 'string' ? v.skills.split(',').map(s=>s.trim()) : []);
+        
+        let matchedSkills = 0;
+        if (skills.length > 0) {
+          skills.forEach(skill => {
+            if (skill && taskDescLower.includes(skill.toLowerCase())) {
+              matchedSkills++;
+              matchScore += 25; // Add 25% for each matched skill
+            }
+          });
+        }
+        
+        // Cap score at 98% for fallback
+        matchScore = Math.min(98, matchScore);
+        
+        return {
+          ...v,
+          calculatedScore: matchScore,
+          matchedSkillCount: matchedSkills
+        };
+      });
+
+      // Sort by highest score first
+      scoredVolunteers.sort((a, b) => b.calculatedScore - a.calculatedScore);
+      const selectedVolunteers = scoredVolunteers.slice(0, Math.min(3, scoredVolunteers.length));
       
       const fallbackResult = {
         matches: selectedVolunteers.map(v => ({
           name: v.name || "Unknown",
-          score: Math.floor(Math.random() * 20) + 80, // Score 80-99
-          reason: `Matched based on general availability and skills (Automated Fallback Mode).`
+          score: v.calculatedScore,
+          reason: v.matchedSkillCount > 0 
+            ? `Matched ${v.matchedSkillCount} skill(s) found in task description (Automated Fallback Mode).`
+            : `Matched based on general availability (Automated Fallback Mode).`
         })),
-        priority: "High",
-        explanation: "The AI service is currently experiencing high demand or quota limits. This is a local fallback match using available volunteers."
+        priority: "Unassessed",
+        explanation: "The AI service is currently experiencing high demand or quota limits. This is a local fallback match using available volunteers based on basic keyword matching."
       };
       
       return res.json(fallbackResult);
