@@ -53,7 +53,7 @@ This platform empowers NGOs to match volunteers to critical tasks based on their
 
 ## Demo
 Once both servers are running:
-1. Go to `http://localhost:5173`.
+1. Go to `https://volunteer-dispatcher-frontend.vercel.app/`.
 2. Navigate to **Post Task**.
 3. Use the **Speak Task** button or type in task requirements.
 4. Click **Find Best Volunteers with AI**.
